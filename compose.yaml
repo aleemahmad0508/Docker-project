@@ -1,0 +1,53 @@
+services:
+
+  web:
+    build: .
+    container_name: cloud-notes-web
+
+    ports:
+      - "5000:5000"
+
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: cloudnotes
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - cloud-notes-network
+
+  postgres:
+    image: postgres:16
+
+    container_name: cloud-notes-db
+
+    environment:
+      POSTGRES_DB: cloudnotes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+    networks:
+      - cloud-notes-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cloudnotes"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+networks:
+  cloud-notes-network:
+
+
+volumes:
+  postgres-data:
